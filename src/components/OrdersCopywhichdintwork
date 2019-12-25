@@ -1,0 +1,234 @@
+import React, { PureComponent } from "react";
+import Axios from "axios";
+
+class Orders extends PureComponent {
+  state = {
+    orders: "",
+    orderscopy: ""
+  };
+  //   shouldComponentUpdate(nextprops,nextstate){
+  //       if(this.state.orders===nextstate.orders)
+  //       return false
+  //       return true
+  //   }
+  customcomponentDidUpdate = data => {
+    console.log("data", data);
+    // console.log("prevstate.orders", prevstate.orders);
+    // console.log("this.state.orders", this.state.orders);
+    // console.log(
+    //   "prevstate.orders != this.state.orders",
+    //   prevstate.orders.order !== this.state.orders.order
+    //);
+    //if (prevstate.orders.order !== this.state.orders.order) {
+    Axios.get(`https://brickorder-4ca5f.firebaseio.com/orders.json`).then(
+      res => {
+        if (data.dispatched !== undefined) alert("Bricks have been dispatched");
+        else if (data.bricksNo !== undefined)
+          alert(" No of bricks have been updated");
+        const orders = [];
+        for (let i in res.data) {
+          //console.log("igggggggggggg", i);
+          orders.push({
+            id: i,
+            order: res.data[i],
+            edit: false
+          });
+        }
+        this.setState({ orders: orders, orderscopy: orders });
+      }
+    );
+  };
+
+  //   editvalueHandler = (e, bricks, id) => {
+  //     e.preventDefault();
+  //     const orders = [...this.state.orders];
+  //     const index = orders.findIndex(od => od.id === id);
+  //     const updatedItem = { ...orders[index] };
+  //     updatedItem.edit = !orders[index].edit;
+  //     const updatedorder = { ...updatedItem.order };
+  //     updatedorder.bricksNo = bricks;
+  //     updatedItem["order"] = updatedorder;
+  //     orders[index] = updatedItem;
+  //     this.setState({ orders, orderscopy: orders });
+
+  //     alert("No of bricks have been updated");
+  //   };
+
+  editvalueHandler = (e, bricks, id) => {
+    e.preventDefault();
+
+    Axios.patch(`https://brickorder-4ca5f.firebaseio.com/orders/${id}.json`, {
+      bricksNo: bricks
+    }).then(res => {
+      console.log("res.data", res.data);
+      this.customcomponentDidUpdate(res.data);
+      // const orders = [];
+      //   for (let i in res.data) {
+      //     console.log("i", i);
+      //     orders.push({
+      //       id: i,
+      //       order: res.data[i],
+      //       edit: false,
+      //       dispatched: false
+      //     });
+      //   }
+      //   this.setState({ orders: orders, orderscopy: orders }, () =>
+      //     this.customcomponentDidUpdate()
+      //   );
+    });
+  };
+  editChange = (e, id) => {
+    e.preventDefault();
+    console.log("id is", id);
+    const orders = [...this.state.orders];
+    const index = orders.findIndex(od => od.id === id);
+    const updatedItem = { ...orders[index] };
+    updatedItem.edit = !orders[index].edit;
+    orders[index] = updatedItem;
+    this.setState({ orders });
+  };
+
+  SearchName = e => {
+    e.preventDefault();
+    console.log(e.target.value);
+    const orders = [...this.state.orderscopy];
+    const orders1 = orders.filter(ord => {
+      const od = ord.order.name.toString();
+      const search = e.target.value.toString();
+      return od.includes(search);
+    });
+    this.setState({ orders: orders1 });
+  };
+  componentDidMount = () => {
+    // Axios.get(
+    //   `https://brickorder-4ca5f.firebaseio.com/orders.json?auth=dNo7okAJqBRuAmwT26VR1sT4r6ReFz49mCAMq4Dx`
+    // )
+    Axios.get(`https://brickorder-4ca5f.firebaseio.com/orders.json`)
+      .then(res => {
+        console.log(res.data);
+        const orders = [];
+        for (let i in res.data) {
+          console.log("igggggggggggg", i);
+          orders.push({
+            id: i,
+            order: res.data[i],
+            edit: false
+          
+          });
+        }
+        this.setState({ orders: orders, orderscopy: orders });
+      })
+      .catch(err => console.log(err));
+  };
+  fulfilOrder = (e, id) => {
+    e.preventDefault();
+    Axios.patch(`https://brickorder-4ca5f.firebaseio.com/orders/${id}.json`, {
+      dispatched: true
+    }).then(res => {
+      console.log("res", res);
+      this.customcomponentDidUpdate(res.data);
+    });
+    // });
+    // const orders = [...this.state.orders];
+    // const index = orders.findIndex(od => od.id === id);
+    // const updatedorder = { ...orders[index] };
+    // updatedorder.dispatched = true;
+    // orders[index] = updatedorder;
+    // this.setState({ orders, orderscopy: orders });
+  };
+  //   componentDidUpdate = () => {
+  //     // Axios.get(
+  //     //   `https://brickorder-4ca5f.firebaseio.com/orders.json?auth=dNo7okAJqBRuAmwT26VR1sT4r6ReFz49mCAMq4Dx`
+  //     // )
+  //     Axios.get(`https://brickorder-4ca5f.firebaseio.com/orders.json`)
+  //       .then(res => {
+  //         console.log(res.data);
+  //         return this.setState({ orders: res.data });
+  //       })
+  //       .catch(err => console.log(err));
+  //   };
+  render() {
+    console.log("this.state.orders", this.state.orders);
+    let order;
+    if (this.state.orders) {
+      order = this.state.orders.map(od => (
+        <div className="card" style={{ textAlign: "center" }}>
+          name:{od.order.name}
+          <br />
+          <i>
+            {od.edit ? (
+              <span>
+                {" "}
+                <input
+                  type="text"
+                  defaultValue={od.order.bricksNo}
+                  ref={editval => (this.editval = editval)}
+                />
+                <span
+                  onClick={e =>
+                    this.editvalueHandler(e, this.editval.value, od.id)
+                  }
+                >
+                  {" "}
+                  <i className="fa fa-check" />
+                </span>
+              </span>
+            ) : (
+              <i>
+                {" "}
+                No of Bricks:{od.order.bricksNo}
+                {"  "}
+                <span onDoubleClick={e => this.editChange(e, od.id)}>
+                  <i className="fa fa-edit" />
+                </span>
+              </i>
+            )}
+          </i>
+          date to be delivered:{od.order.date}
+          <br />
+          instructions by user:{od.order.instructions}
+          <br />
+          dispatched:{od.order.dispatched ? "true" : "false"}
+          <div style={{ textAlign: "center" }}>
+            {!od.order.dispatched ? (
+              <button
+                style={{ width: "14%", textAlign: "center" }}
+                className="btn btn-success"
+                onClick={e => this.fulfilOrder(e, od.id)}
+              >
+                Fulfill order
+              </button>
+            ) : (
+              <button
+                style={{ width: "14%", textAlign: "center" }}
+                className="btn btn-secondary"
+                onClick={e => this.fulfilOrder(e, od.id)}
+                disabled
+              >
+                Fulfill order
+              </button>
+            )}
+          </div>
+        </div>
+      ));
+    } else {
+      order = (
+        <div className="spinner-border text-success ">
+          <span className="sr-only">Loading...</span>
+        </div>
+      );
+    }
+    return (
+      <div style={{ textAlign: "center" }}>
+        <input
+          style={{ borderRadius: "20px" }}
+          type="text"
+          placeholder="...search"
+          onChange={e => this.SearchName(e)}
+        />
+        {order}
+      </div>
+    );
+  }
+}
+export default Orders;
